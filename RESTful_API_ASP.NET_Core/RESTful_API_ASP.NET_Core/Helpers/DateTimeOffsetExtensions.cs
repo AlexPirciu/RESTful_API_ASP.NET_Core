@@ -2,9 +2,9 @@
 
 namespace RESTful_API_ASP.NET_Core.Helpers
 {
-    public class DateTimeOffsetExtensions
+    public static class DateTimeOffsetExtensions
     {
-        public static int GetCurrentAge(DateTimeOffset dateTimeOffset)
+        public static int GetCurrentAge(this DateTimeOffset dateTimeOffset)
         {
             var currentDate = DateTime.UtcNow;
             int age = currentDate.Year - dateTimeOffset.Year;

@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using RESTful_API_ASP.NET_Core.Entities;
+using RESTful_API_ASP.NET_Core.Helpers;
 using RESTful_API_ASP.NET_Core.Services;
 
 namespace RESTful_API_ASP.NET_Core
@@ -24,6 +25,8 @@ namespace RESTful_API_ASP.NET_Core
             var connectionString = configuration["ConnectionStrings:libraryDBConnectionString"];
             services.AddDbContext<LibraryContext>(o => o.UseSqlServer(connectionString));
 
+            services.AddMvc();
+
             services.AddScoped<ILibraryRepository, LibraryRepository>();
         }
 
@@ -34,6 +37,15 @@ namespace RESTful_API_ASP.NET_Core
             {
                 app.UseDeveloperExceptionPage();
             }
+
+            AutoMapper.Mapper.Initialize(cfg =>
+            {
+                cfg.CreateMap<Entities.Author, Models.Author>()
+                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => $"{src.FirstName} {src.LastName}"))
+                .ForMember(dest => dest.Age, opt => opt.MapFrom(src => src.DateOfBirth.GetCurrentAge()));
+            });
+
+            app.UseMvc();
 
             libraryContext.EnsureSeedDataForContext();
         }
