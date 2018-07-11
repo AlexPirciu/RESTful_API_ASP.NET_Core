@@ -31,7 +31,7 @@ namespace RESTful_API_ASP.NET_Core.Controllers
             return Ok(booksForAuthor);
         }
 
-        [HttpGet("{bookId}")]
+        [HttpGet("{bookId}", Name = "GetBookForAuthor")]
         public IActionResult GetBookForAuthor(Guid authorId, Guid bookId)
         {
             if (!libraryRepository.AuthorExists(authorId))
@@ -48,6 +48,31 @@ namespace RESTful_API_ASP.NET_Core.Controllers
 
             var bookForAuthor = Mapper.Map<Models.Book>(bookForAuthorFromRepo);
             return Ok(bookForAuthor);
+        }
+
+        [HttpPost()]
+        public IActionResult CreateBookForAuthor(Guid authorId, [FromBody] Models.BookForCreation book)
+        {
+            if (book == null)
+            {
+                return BadRequest();
+            }
+
+            if (!libraryRepository.AuthorExists(authorId))
+            {
+                return NotFound();
+            }
+
+            var bookCreated = Mapper.Map<Entities.Book>(book);
+
+            libraryRepository.AddBookForAuthor(authorId, bookCreated);
+            if (!libraryRepository.Save())
+            {
+                throw new Exception("Creating book failed on save");
+            }
+
+            var bookToReturn = Mapper.Map<Models.Book>(bookCreated);
+            return CreatedAtRoute("GetBookForAuthor", new { authorId = authorId, bookId = bookToReturn.Id }, bookToReturn);
         }
     }
 }

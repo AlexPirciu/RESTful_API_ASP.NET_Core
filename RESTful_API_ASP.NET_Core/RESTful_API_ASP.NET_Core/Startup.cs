@@ -64,6 +64,8 @@ namespace RESTful_API_ASP.NET_Core
                 cfg.CreateMap<Entities.Book, Models.Book>();
 
                 cfg.CreateMap<Models.AuthorForCreation, Entities.Author>();
+
+                cfg.CreateMap<Models.BookForCreation, Entities.Book>();
             });
 
             app.UseMvc();

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace RESTful_API_ASP.NET_Core.Models
 {
@@ -11,5 +12,7 @@ namespace RESTful_API_ASP.NET_Core.Models
         public DateTimeOffset DateOfBirth { get; set; }
 
         public string Genre { get; set; }
+
+        public ICollection<BookForCreation> Books { get; set; } = new List<BookForCreation>();
     }
 }
