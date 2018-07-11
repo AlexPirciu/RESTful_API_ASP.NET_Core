@@ -62,6 +62,8 @@ namespace RESTful_API_ASP.NET_Core
                 .ForMember(dest => dest.Age, opt => opt.MapFrom(src => src.DateOfBirth.GetCurrentAge()));
 
                 cfg.CreateMap<Entities.Book, Models.Book>();
+
+                cfg.CreateMap<Models.AuthorForCreation, Entities.Author>();
             });
 
             app.UseMvc();

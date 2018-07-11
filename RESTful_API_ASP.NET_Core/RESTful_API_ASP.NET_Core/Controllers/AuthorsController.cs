@@ -28,7 +28,7 @@ namespace RESTful_API_ASP.NET_Core.Controllers
             return Ok(authors);
         }
 
-        [HttpGet("{authorId}")]
+        [HttpGet("{authorId}", Name = "GetAuthor")]
         public IActionResult GetAuthor(Guid authorId)
         {
             var authorFromRepo = libraryRepository.GetAuthor(authorId);
@@ -40,6 +40,27 @@ namespace RESTful_API_ASP.NET_Core.Controllers
 
             var author = Mapper.Map<Models.Author>(authorFromRepo);
             return Ok(author);
+        }
+
+        [HttpPost()]
+        public IActionResult CreateAuthor([FromBody] Models.AuthorForCreation author)
+        {
+            if (author == null)
+            {
+                return BadRequest();
+            }
+
+            var authorCreated = Mapper.Map<Entities.Author>(author);
+
+            libraryRepository.AddAuthor(authorCreated);
+            if (!libraryRepository.Save())
+            {
+                throw new Exception("Creating an author failed on save.");
+                //return StatusCode(500, "A problem ocurred when handling the request.");
+            }
+
+            var authorToReturn = Mapper.Map<Models.Author>(authorCreated);
+            return CreatedAtRoute("GetAuthor", new { authorId = authorToReturn.Id }, authorToReturn);
         }
     }
 }
