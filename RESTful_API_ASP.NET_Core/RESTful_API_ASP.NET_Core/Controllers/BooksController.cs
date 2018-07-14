@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using RESTful_API_ASP.NET_Core.Services;
 using System;
@@ -18,7 +19,7 @@ namespace RESTful_API_ASP.NET_Core.Controllers
         }
 
         [HttpGet()]
-        public IActionResult GetBookForAuthor(Guid authorId)
+        public IActionResult GetBooksForAuthor(Guid authorId)
         {
             if (!libraryRepository.AuthorExists(authorId))
             {
@@ -73,6 +74,120 @@ namespace RESTful_API_ASP.NET_Core.Controllers
 
             var bookToReturn = Mapper.Map<Models.Book>(bookCreated);
             return CreatedAtRoute("GetBookForAuthor", new { authorId = authorId, bookId = bookToReturn.Id }, bookToReturn);
+        }
+
+        [HttpDelete("{bookId}")]
+        public IActionResult DeleteBookForAuthor(Guid authorId, Guid bookId)
+        {
+            if (!libraryRepository.AuthorExists(authorId))
+            {
+                return NotFound();
+            }
+
+            var bookFromRepo = libraryRepository.GetBookForAuthor(authorId, bookId);
+            if (bookFromRepo == null)
+            {
+                return NotFound();
+            }
+
+            libraryRepository.DeleteBookForAuthor(bookFromRepo);
+            if (!libraryRepository.Save())
+            {
+                throw new Exception($"Deleting book {bookId} for the author {authorId} failed.");
+            }
+
+            return NoContent();
+        }
+
+        //persistance?
+        //mock persistance?
+        //de ce trebuie apelata functia pt update?
+        [HttpPut("{bookId}")]
+        public IActionResult UpdateBookForAuthor(Guid authorId, Guid bookId, [FromBody] Models.BookForUpdate book)
+        {
+            if (book == null)
+            {
+                return BadRequest();
+            }
+
+            if (!libraryRepository.AuthorExists(authorId))
+            {
+                return NotFound();
+            }
+
+            var bookFromRepo = libraryRepository.GetBookForAuthor(authorId, bookId);
+            if (bookFromRepo == null)
+            {
+                var bookToAdd = Mapper.Map<Entities.Book>(book);
+                bookToAdd.Id = bookId;
+                libraryRepository.AddBookForAuthor(authorId, bookToAdd);
+
+                if (!libraryRepository.Save())
+                {
+                    throw new Exception($"Upserting book {bookId} for the author {authorId} failed on save.");
+                }
+
+                var bookToReturn = Mapper.Map<Models.Book>(bookToAdd);
+                return CreatedAtRoute("GetBookForAuthor", new { authorId = authorId, bookId = bookId }, bookToReturn);
+            }
+
+            Mapper.Map(book, bookFromRepo);
+
+            libraryRepository.UpdateBookForAuthor(bookFromRepo);
+            if (!libraryRepository.Save())
+            {
+                throw new Exception($"Updating book {bookId} for the author {authorId} failed on save.");
+            }
+
+            return NoContent();
+        }
+
+        [HttpPatch("{bookId}")]
+        public IActionResult PartiallyUpdateBookForAuthor(Guid authorId, Guid bookId, [FromBody] JsonPatchDocument<Models.BookForUpdate> patchDoc)
+        {
+            if (patchDoc == null)
+            {
+                return BadRequest();
+            }
+
+            if (!libraryRepository.AuthorExists(authorId))
+            {
+                return NotFound();
+            }
+
+            var bookFromRepo = libraryRepository.GetBookForAuthor(authorId, bookId);
+            if (bookFromRepo == null)
+            {
+                var book = new Models.BookForUpdate();
+                patchDoc.ApplyTo(book);
+
+                var bookToAdd = Mapper.Map<Entities.Book>(book);
+                bookToAdd.Id = bookId;
+
+                libraryRepository.AddBookForAuthor(authorId, bookToAdd);
+                if (!libraryRepository.Save())
+                {
+                    throw new Exception($"Upsert book {bookId} for the author {authorId} failed on save.");
+                }
+
+                var bookToReturn = Mapper.Map<Models.Book>(bookToAdd);
+                return CreatedAtRoute("GetBookForAuthor", new { bookId = bookId, authorId = authorId }, bookToReturn);
+            }
+
+            var bookToPatch = Mapper.Map<Models.BookForUpdate>(bookFromRepo);
+
+            patchDoc.ApplyTo(bookToPatch);
+
+            //add validation
+
+            Mapper.Map(bookToPatch, bookFromRepo);
+            libraryRepository.UpdateBookForAuthor(bookFromRepo);
+            if (!libraryRepository.Save())
+            {
+                throw new Exception($"Patching book {bookId} for the author {authorId} failed on save.");
+            }
+
+            return NoContent();
         }
     }
 }

@@ -31,6 +31,7 @@ namespace RESTful_API_ASP.NET_Core
             {
                 setupAction.ReturnHttpNotAcceptable = true;
                 setupAction.OutputFormatters.Add(new XmlDataContractSerializerOutputFormatter());
+                setupAction.InputFormatters.Add(new XmlDataContractSerializerInputFormatter());
             });
 
             services.AddScoped<ILibraryRepository, LibraryRepository>();
@@ -66,6 +67,12 @@ namespace RESTful_API_ASP.NET_Core
                 cfg.CreateMap<Models.AuthorForCreation, Entities.Author>();
 
                 cfg.CreateMap<Models.BookForCreation, Entities.Book>();
+
+                cfg.CreateMap<Models.BookForUpdate, Entities.Book>();
+
+                cfg.CreateMap<Entities.Book, Models.BookForUpdate>();
+
+                cfg.CreateMap<Models.AuthorForUpdate, Entities.Author>();
             });
 
             app.UseMvc();

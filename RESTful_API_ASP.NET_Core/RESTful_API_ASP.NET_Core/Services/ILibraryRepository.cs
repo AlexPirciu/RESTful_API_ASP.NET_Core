@@ -16,7 +16,7 @@ namespace RESTful_API_ASP.NET_Core.Services
 
         void AddAuthor(Author author);
 
-        //void UpdateAuthor(Author author);
+        void UpdateAuthor(Author author);
 
         void DeleteAuthor(Author author);
 
@@ -26,7 +26,7 @@ namespace RESTful_API_ASP.NET_Core.Services
 
         void AddBookForAuthor(Guid author, Book book);
 
-        //void UpdateBookForAuthor(Author author, Book book);
+        void UpdateBookForAuthor(Book book);
 
         void DeleteBookForAuthor(Book book);
 

@@ -27,7 +27,7 @@ namespace RESTful_API_ASP.NET_Core.Services
         public IEnumerable<Author> GetAuthors(IEnumerable<Guid> authorsId)
         {
             return context.Authors.Where(a => authorsId.Contains(a.Id))
-                .OrderBy(a => a.FirstName)
+                //.OrderBy(a => a.FirstName)
                 .OrderBy(a => a.LastName)
                 .ToList();
         }
@@ -51,10 +51,10 @@ namespace RESTful_API_ASP.NET_Core.Services
             }
         }
 
-        //public void UpdateAuthor(Author author)
-        //{
+        public void UpdateAuthor(Author author)
+        {
 
-        //}
+        }
 
         public void DeleteAuthor(Author author)
         {
@@ -85,6 +85,11 @@ namespace RESTful_API_ASP.NET_Core.Services
                 }
                 author.Books.Add(book);
             }
+        }
+
+        public void UpdateBookForAuthor(Book book)
+        {
+
         }
 
         public void DeleteBookForAuthor(Book book)

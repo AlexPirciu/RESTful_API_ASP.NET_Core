@@ -1,4 +1,6 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using RESTful_API_ASP.NET_Core.Services;
 using System;
@@ -61,6 +63,108 @@ namespace RESTful_API_ASP.NET_Core.Controllers
 
             var authorToReturn = Mapper.Map<Models.Author>(authorCreated);
             return CreatedAtRoute("GetAuthor", new { authorId = authorToReturn.Id }, authorToReturn);
+        }
+
+        [HttpPost("{authorId}")]
+        public IActionResult BlockingAuthorCreation(Guid authorId)
+        {
+            if (libraryRepository.AuthorExists(authorId))
+            {
+                return new StatusCodeResult(StatusCodes.Status409Conflict);
+            }
+            return NotFound();
+        }
+
+        [HttpDelete("{authorId}")]
+        public IActionResult DeleteAuthor(Guid authorId)
+        {
+            var authorFromRepo = libraryRepository.GetAuthor(authorId);
+
+            if (authorFromRepo == null)
+            {
+                return NotFound();
+            }
+
+            libraryRepository.DeleteAuthor(authorFromRepo);
+            if (!libraryRepository.Save())
+            {
+                throw new Exception($"Deleting author {authorId} failed.");
+            }
+
+            return NoContent();
+        }
+
+        [HttpPut("{authorId}")]
+        public IActionResult UpdateAuthor(Guid authorId, [FromBody] Models.AuthorForUpdate author)
+        {
+            if (author == null)
+            {
+                return BadRequest();
+            }
+
+            var authorFromRepo = libraryRepository.GetAuthor(authorId);
+            if (authorFromRepo == null)
+            {
+                var authorToAdd = Mapper.Map<Entities.Author>(author);
+                libraryRepository.AddAuthor(authorToAdd);
+                authorToAdd.Id = authorId;
+                if (!libraryRepository.Save())
+                {
+                    throw new Exception($"Creating author {authorId} failed on save.");
+                }
+
+                var authorToReturn = Mapper.Map<Models.Author>(authorToAdd);
+                return CreatedAtRoute("GetAuthor", new { authorId = authorId }, authorToReturn);
+            }
+
+            Mapper.Map(author, authorFromRepo);
+            libraryRepository.UpdateAuthor(authorFromRepo);
+            if (!libraryRepository.Save())
+            {
+                throw new Exception($"Updating author {authorId} failed on save.");
+            }
+
+            return NoContent();
+        }
+
+        [HttpPatch("{authorId}")]
+        public IActionResult PartialUpdateAuthor(Guid authorId, [FromBody] JsonPatchDocument<Models.AuthorForUpdate> patchDoc)
+        {
+            if (patchDoc == null)
+            {
+                return BadRequest();
+            }
+
+            var authorFromRepo = libraryRepository.GetAuthor(authorId);
+            if (authorFromRepo == null)
+            {
+                var author = new Models.AuthorForUpdate();
+                patchDoc.ApplyTo(author);
+
+                var authorToAdd = Mapper.Map<Entities.Author>(author);
+                libraryRepository.AddAuthor(authorToAdd);
+                authorToAdd.Id = authorId;
+                if (!libraryRepository.Save())
+                {
+                    throw new Exception($"Creatine author {authorId} failed on save.");
+                }
+
+                var authorToReturn = Mapper.Map<Models.Author>(authorToAdd);
+                return CreatedAtRoute("GetAuthor", new { authorId = authorId }, authorToReturn);
+            }
+
+            var authorToPatch = Mapper.Map<Models.AuthorForUpdate>(authorFromRepo);
+            patchDoc.ApplyTo(authorToPatch);
+
+            Mapper.Map(authorToPatch, authorFromRepo);
+            libraryRepository.UpdateAuthor(authorFromRepo);
+            authorFromRepo.Id = authorId;
+            if (!libraryRepository.Save())
+            {
+                throw new Exception($"Updating author {authorId} failed on save.");
+            }
+
+            return NoContent();
         }
     }
 }
