@@ -1,15 +1,22 @@
-﻿using System;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace RESTful_API_ASP.NET_Core.Models
 {
-    public class AuthorForUpdate
+    public class AuthorForUpdate : AuthorForManipulation
     {
-        public string FirstName { get; set; }
 
-        public string LastName { get; set; }
+        [Required(ErrorMessage = "You have to provide the genre of the author")]
+        public override string Genre
+        {
+            get
+            {
+                return base.Genre;
+            }
 
-        public DateTimeOffset DateOfBirth { get; set; }
-
-        public string Genre { get; set; }
+            set
+            {
+                base.Genre = value;
+            }
+        }
     }
 }

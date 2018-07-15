@@ -59,6 +59,16 @@ namespace RESTful_API_ASP.NET_Core.Controllers
                 return BadRequest();
             }
 
+            if (book.Title == book.Description)
+            {
+                ModelState.AddModelError(nameof(Models.BookForCreation), "The title and the description must be different");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return new Helpers.UnprocessableEntityObjectResult(ModelState);
+            }
+
             if (!libraryRepository.AuthorExists(authorId))
             {
                 return NotFound();
@@ -110,6 +120,16 @@ namespace RESTful_API_ASP.NET_Core.Controllers
                 return BadRequest();
             }
 
+            if (book.Title == book.Description)
+            {
+                ModelState.AddModelError(nameof(Models.BookForUpdate), "The title and the description must be different");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return new Helpers.UnprocessableEntityObjectResult(ModelState);
+            }
+
             if (!libraryRepository.AuthorExists(authorId))
             {
                 return NotFound();
@@ -159,7 +179,19 @@ namespace RESTful_API_ASP.NET_Core.Controllers
             if (bookFromRepo == null)
             {
                 var book = new Models.BookForUpdate();
-                patchDoc.ApplyTo(book);
+                patchDoc.ApplyTo(book, ModelState);
+
+                if (book.Title == book.Description)
+                {
+                    ModelState.AddModelError(nameof(Models.BookForUpdate), "The title and the description must be different");
+                }
+
+                TryValidateModel(book);
+
+                if (!ModelState.IsValid)
+                {
+                    return new Helpers.UnprocessableEntityObjectResult(ModelState);
+                }
 
                 var bookToAdd = Mapper.Map<Entities.Book>(book);
                 bookToAdd.Id = bookId;
@@ -176,9 +208,19 @@ namespace RESTful_API_ASP.NET_Core.Controllers
 
             var bookToPatch = Mapper.Map<Models.BookForUpdate>(bookFromRepo);
 
-            patchDoc.ApplyTo(bookToPatch);
+            patchDoc.ApplyTo(bookToPatch, ModelState);
 
-            //add validation
+            if (bookToPatch.Title == bookToPatch.Description)
+            {
+                ModelState.AddModelError(nameof(Models.BookForUpdate), "The title and the description must be different");
+            }
+
+            TryValidateModel(bookToPatch);
+
+            if (!ModelState.IsValid)
+            {
+                return new Helpers.UnprocessableEntityObjectResult(ModelState);
+            }
 
             Mapper.Map(bookToPatch, bookFromRepo);
             libraryRepository.UpdateBookForAuthor(bookFromRepo);

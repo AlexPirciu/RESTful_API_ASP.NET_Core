@@ -52,6 +52,16 @@ namespace RESTful_API_ASP.NET_Core.Controllers
                 return BadRequest();
             }
 
+            if (author.FirstName == author.LastName)
+            {
+                ModelState.AddModelError(nameof(Models.AuthorForCreation), "The first name and the last name of the author must be different");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return new Helpers.UnprocessableEntityObjectResult(ModelState);
+            }
+
             var authorCreated = Mapper.Map<Entities.Author>(author);
 
             libraryRepository.AddAuthor(authorCreated);
@@ -102,6 +112,16 @@ namespace RESTful_API_ASP.NET_Core.Controllers
                 return BadRequest();
             }
 
+            if (author.FirstName == author.LastName)
+            {
+                ModelState.AddModelError(nameof(Models.AuthorForCreation), "The first name and the last name of the author must be different");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return new Helpers.UnprocessableEntityObjectResult(ModelState);
+            }
+
             var authorFromRepo = libraryRepository.GetAuthor(authorId);
             if (authorFromRepo == null)
             {
@@ -135,11 +155,25 @@ namespace RESTful_API_ASP.NET_Core.Controllers
                 return BadRequest();
             }
 
+
+
             var authorFromRepo = libraryRepository.GetAuthor(authorId);
             if (authorFromRepo == null)
             {
                 var author = new Models.AuthorForUpdate();
-                patchDoc.ApplyTo(author);
+                patchDoc.ApplyTo(author, ModelState);
+
+                if (author.FirstName == author.LastName)
+                {
+                    ModelState.AddModelError(nameof(Models.AuthorForUpdate), "The first name and the last name of the author must be different");
+                }
+
+                TryValidateModel(author);
+
+                if (!ModelState.IsValid)
+                {
+                    return new Helpers.UnprocessableEntityObjectResult(ModelState);
+                }
 
                 var authorToAdd = Mapper.Map<Entities.Author>(author);
                 libraryRepository.AddAuthor(authorToAdd);
@@ -154,7 +188,19 @@ namespace RESTful_API_ASP.NET_Core.Controllers
             }
 
             var authorToPatch = Mapper.Map<Models.AuthorForUpdate>(authorFromRepo);
-            patchDoc.ApplyTo(authorToPatch);
+            patchDoc.ApplyTo(authorToPatch, ModelState);
+
+            if (authorToPatch.FirstName == authorToPatch.LastName)
+            {
+                ModelState.AddModelError(nameof(Models.AuthorForUpdate), "The first name and the lastname of the author must be different");
+            }
+
+            TryValidateModel(authorToPatch);
+
+            if (!ModelState.IsValid)
+            {
+                return new Helpers.UnprocessableEntityObjectResult(ModelState);
+            }
 
             Mapper.Map(authorToPatch, authorFromRepo);
             libraryRepository.UpdateAuthor(authorFromRepo);

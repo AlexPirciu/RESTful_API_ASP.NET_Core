@@ -1,9 +1,21 @@
-﻿namespace RESTful_API_ASP.NET_Core.Models
-{
-    public class BookForUpdate
-    {
-        public string Title { get; set; }
+﻿using System.ComponentModel.DataAnnotations;
 
-        public string Description { get; set; }
+namespace RESTful_API_ASP.NET_Core.Models
+{
+    public class BookForUpdate : BookForManipulation
+    {
+        [Required(ErrorMessage = "You should provide a description for the book")]
+        public override string Description
+        {
+            get
+            {
+                return base.Description;
+            }
+
+            set
+            {
+                base.Description = value;
+            }
+        }
     }
 }
