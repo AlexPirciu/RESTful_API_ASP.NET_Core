@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using RESTful_API_ASP.NET_Core.Services;
 using System;
 using System.Collections.Generic;
@@ -14,10 +15,12 @@ namespace RESTful_API_ASP.NET_Core.Controllers
 
     public class AuthorsController : Controller
     {
+        private ILogger<AuthorsController> logger;
         private ILibraryRepository libraryRepository;
 
-        public AuthorsController(ILibraryRepository libraryRepository)
+        public AuthorsController(ILogger<AuthorsController> logger, ILibraryRepository libraryRepository)
         {
+            this.logger = logger;
             this.libraryRepository = libraryRepository;
         }
 
@@ -101,6 +104,7 @@ namespace RESTful_API_ASP.NET_Core.Controllers
                 throw new Exception($"Deleting author {authorId} failed.");
             }
 
+            logger.LogInformation(100, $"Auhtor with id {authorId} was deleted.");
             return NoContent();
         }
 

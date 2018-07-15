@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using RESTful_API_ASP.NET_Core.Services;
 using System;
 using System.Collections.Generic;
@@ -11,10 +12,12 @@ namespace RESTful_API_ASP.NET_Core.Controllers
 
     public class BooksController : Controller
     {
+        private ILogger<BooksController> logger;
         private ILibraryRepository libraryRepository;
 
-        public BooksController(ILibraryRepository libraryRepository)
+        public BooksController(ILibraryRepository libraryRepository, ILogger<BooksController> logger)
         {
+            this.logger = logger;
             this.libraryRepository = libraryRepository;
         }
 
@@ -105,6 +108,8 @@ namespace RESTful_API_ASP.NET_Core.Controllers
             {
                 throw new Exception($"Deleting book {bookId} for the author {authorId} failed.");
             }
+
+            logger.LogInformation(100, $"Book {bookId} for author {authorId} was deleted.");
 
             return NoContent();
         }
@@ -208,7 +213,9 @@ namespace RESTful_API_ASP.NET_Core.Controllers
 
             var bookToPatch = Mapper.Map<Models.BookForUpdate>(bookFromRepo);
 
-            patchDoc.ApplyTo(bookToPatch, ModelState);
+            //patchDoc.ApplyTo(bookToPatch, ModelState);
+
+            patchDoc.ApplyTo(bookToPatch);
 
             if (bookToPatch.Title == bookToPatch.Description)
             {
