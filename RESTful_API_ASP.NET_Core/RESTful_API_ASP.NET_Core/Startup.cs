@@ -2,11 +2,15 @@
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Formatters;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json.Serialization;
 using RESTful_API_ASP.NET_Core.Entities;
 using RESTful_API_ASP.NET_Core.Helpers;
 using RESTful_API_ASP.NET_Core.Services;
@@ -34,9 +38,26 @@ namespace RESTful_API_ASP.NET_Core
                 setupAction.ReturnHttpNotAcceptable = true;
                 setupAction.OutputFormatters.Add(new XmlDataContractSerializerOutputFormatter());
                 setupAction.InputFormatters.Add(new XmlDataContractSerializerInputFormatter());
+            })
+            .AddJsonOptions(options =>
+            {
+                options.SerializerSettings.ContractResolver =
+                new CamelCasePropertyNamesContractResolver();
             });
 
             services.AddScoped<ILibraryRepository, LibraryRepository>();
+
+            services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
+
+            services.AddScoped<IUrlHelper, UrlHelper>(implementationFactory =>
+            {
+                var actionContext =
+                implementationFactory.GetService<IActionContextAccessor>().ActionContext;
+                return new UrlHelper(actionContext);
+            });
+
+            services.AddTransient<IPropertyMappingService, PropertyMappingService>();
+            services.AddTransient<ITypeHelperServices, TypeHelperService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -46,11 +67,11 @@ namespace RESTful_API_ASP.NET_Core
 
             loggerFactory.AddDebug(LogLevel.Information);
 
-            //if (env.IsDevelopment())
-            //{
-            //    app.UseDeveloperExceptionPage();
-            //}
-            //else
+            if (env.IsDevelopment())
+            {
+                app.UseDeveloperExceptionPage();
+            }
+            else
             {
                 app.UseExceptionHandler(appBuilder =>
                 {

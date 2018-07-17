@@ -8,7 +8,7 @@ namespace RESTful_API_ASP.NET_Core.Services
     {
         bool AuthorExists(Guid authorId);
 
-        IEnumerable<Author> GetAuthors();
+        Helpers.PagedList<Author> GetAuthors(Helpers.AuthorsResourceParameters authorsResourceParameters);
 
         Author GetAuthor(Guid authorId);
 

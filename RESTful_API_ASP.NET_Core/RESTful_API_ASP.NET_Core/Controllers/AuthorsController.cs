@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using RESTful_API_ASP.NET_Core.Helpers;
 using RESTful_API_ASP.NET_Core.Services;
 using System;
 using System.Collections.Generic;
@@ -17,25 +18,51 @@ namespace RESTful_API_ASP.NET_Core.Controllers
     {
         private ILogger<AuthorsController> logger;
         private ILibraryRepository libraryRepository;
+        private IUrlHelper urlHelper;
+        private IPropertyMappingService propertyMappingService;
+        private ITypeHelperServices typeHelperServices;
 
-        public AuthorsController(ILogger<AuthorsController> logger, ILibraryRepository libraryRepository)
+        public AuthorsController(ILogger<AuthorsController> logger, ILibraryRepository libraryRepository,
+            IUrlHelper urlHelper, IPropertyMappingService propertyMappingService, ITypeHelperServices typeHelperServices)
         {
             this.logger = logger;
             this.libraryRepository = libraryRepository;
+            this.urlHelper = urlHelper;
+            this.propertyMappingService = propertyMappingService;
+            this.typeHelperServices = typeHelperServices;
         }
 
-        [HttpGet()]
-        public IActionResult GetAuthors()
+        [HttpGet(Name = "GetAuthors")]
+        public IActionResult GetAuthors(Helpers.AuthorsResourceParameters authorsResourceParameters)
         {
-            var authorsFromRepo = libraryRepository.GetAuthors();
+            if (!propertyMappingService.ValidMappingExistsFor<Models.Author, Entities.Author>(authorsResourceParameters.OrderBy))
+            {
+                return BadRequest();
+            }
+
+            if (!typeHelperServices.TypeHasProperties<Models.Author>(authorsResourceParameters.Fields))
+            {
+                return BadRequest();
+            }
+
+            var authorsFromRepo = libraryRepository.GetAuthors(authorsResourceParameters);
+
+            var paginationMetadata = Helpers.URICreator.CreateURI(authorsResourceParameters, authorsFromRepo, urlHelper, "GetAuthors");
+
+            Response.Headers.Add("X-Pagination", Newtonsoft.Json.JsonConvert.SerializeObject(paginationMetadata));
+
             var authors = Mapper.Map<IEnumerable<Models.Author>>(authorsFromRepo);
 
-            return Ok(authors);
+            return Ok(authors.ShapeData(authorsResourceParameters.Fields));
         }
 
         [HttpGet("{authorId}", Name = "GetAuthor")]
-        public IActionResult GetAuthor(Guid authorId)
+        public IActionResult GetAuthor(Guid authorId, [FromQuery]string fields)
         {
+            if (!typeHelperServices.TypeHasProperties<Models.Author>(fields))
+            {
+                return BadRequest();
+            }
             var authorFromRepo = libraryRepository.GetAuthor(authorId);
 
             if (authorFromRepo == null)
@@ -44,7 +71,7 @@ namespace RESTful_API_ASP.NET_Core.Controllers
             }
 
             var author = Mapper.Map<Models.Author>(authorFromRepo);
-            return Ok(author);
+            return Ok(author.ShapeData(fields));
         }
 
         [HttpPost()]
@@ -184,7 +211,7 @@ namespace RESTful_API_ASP.NET_Core.Controllers
                 authorToAdd.Id = authorId;
                 if (!libraryRepository.Save())
                 {
-                    throw new Exception($"Creatine author {authorId} failed on save.");
+                    throw new Exception($"Creating author {authorId} failed on save.");
                 }
 
                 var authorToReturn = Mapper.Map<Models.Author>(authorToAdd);
@@ -196,7 +223,7 @@ namespace RESTful_API_ASP.NET_Core.Controllers
 
             if (authorToPatch.FirstName == authorToPatch.LastName)
             {
-                ModelState.AddModelError(nameof(Models.AuthorForUpdate), "The first name and the lastname of the author must be different");
+                ModelState.AddModelError(nameof(Models.AuthorForUpdate), "The first name and the last name of the author must be different");
             }
 
             TryValidateModel(authorToPatch);
